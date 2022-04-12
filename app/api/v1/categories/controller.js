@@ -1,6 +1,7 @@
 const { StatusCodes } = require("http-status-codes");
 const Category = require("./model");
 const customAPI = require("../../../errors");
+const { policyFor } = require("../../../policy");
 
 const getAllCategory = async (req, res, next) => {
   try {
@@ -14,6 +15,15 @@ const getAllCategory = async (req, res, next) => {
 
 const storeCategory = async (req, res, next) => {
   try {
+    //--- cek policy ---/
+    let policy = policyFor(req.user);
+    if (!policy.can("create", "Category")) {
+      return res.json({
+        error: 1,
+        message: `Anda tidak memiliki akses untuk membuat category`,
+      });
+    }
+    //-----------------//
     let payload = req.body;
 
     let result = new Category(payload);
@@ -43,6 +53,15 @@ const getOneCategory = async (req, res, next) => {
 
 const updateCategory = async (req, res, next) => {
   try {
+    //--- cek policy ---/
+    let policy = policyFor(req.user);
+    if (!policy.can("update", "Category")) {
+      return res.json({
+        error: 1,
+        message: `Anda tidak memiliki akses untuk update category`,
+      });
+    }
+    //-----------------//
     let payload = req.body;
     const { id: categoryId } = req.params;
 
@@ -59,6 +78,15 @@ const updateCategory = async (req, res, next) => {
 
 const deleteCategory = async (req, res, next) => {
   try {
+    //--- cek policy ---/
+    let policy = policyFor(req.user);
+    if (!policy.can("delete", "Category")) {
+      return res.json({
+        error: 1,
+        message: `Anda tidak memiliki akses untuk mengahapus category`,
+      });
+    }
+    //-----------------//
     const { id: categoryId } = req.params;
 
     let result = await Category.findOneAndDelete({ _id: categoryId });

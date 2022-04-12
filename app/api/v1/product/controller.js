@@ -5,9 +5,20 @@ const Category = require("../categories/model");
 const Tag = require("../tags/model");
 const fs = require("fs");
 const config = require("../../../config");
+const { policyFor } = require("../../../policy");
 
 const storeProduct = async (req, res, next) => {
   try {
+    //--- cek policy ---/
+    let policy = policyFor(req.user);
+    if (!policy.can("create", "Product")) {
+      return res.json({
+        error: 1,
+        message: `Anda tidak memiliki akses untuk membuat produk`,
+      });
+    }
+    //-----------------//
+
     let payload = req.body;
 
     if (payload.category) {
@@ -74,13 +85,16 @@ const getAllProduct = async (req, res, next) => {
       criteria = { ...criteria, tags: { $in: tags.map((tag) => tag._id) } };
     }
 
+    let count = await Product.find(criteria).countDocuments();
+
     const result = await Product.find()
       .limit(parseInt(limit))
       .skip(parseInt(skip))
       .populate("category")
-      .populate("tags");
+      .populate("tags")
+      .select("-__v");
 
-    res.status(StatusCodes.OK).json({ data: result });
+    res.status(StatusCodes.OK).json({ data: result, count });
   } catch (err) {
     next(err);
   }
@@ -104,6 +118,15 @@ const getOneProduct = async (req, res, next) => {
 
 const updateProduct = async (req, res, next) => {
   try {
+    //--- cek policy ---/
+    let policy = policyFor(req.user);
+    if (!policy.can("update", "Product")) {
+      return res.json({
+        error: 1,
+        message: `Anda tidak memiliki akses untuk update produk`,
+      });
+    }
+    //-----------------//
     let payload = req.body;
     const { id: produtId } = req.params;
 
@@ -160,6 +183,15 @@ const updateProduct = async (req, res, next) => {
 
 const deleteProduct = async (req, res, next) => {
   try {
+    //--- cek policy ---/
+    let policy = policyFor(req.user);
+    if (!policy.can("delete", "Product")) {
+      return res.json({
+        error: 1,
+        message: `Anda tidak memiliki akses untuk delete produk`,
+      });
+    }
+    //-----------------//
     const { id: produtId } = req.params;
 
     const result = await Product.findOne({ _id: produtId });
